@@ -56,7 +56,7 @@ enable_extensions() {
   local extensions=("$@")
   to_wait=()
   for ext in "${extensions[@]}"; do
-    enable_extension "$ext" extension >/dev/null 2>&1 &
+    enable_extension "$ext" extension  &
     to_wait+=($!)
   done
   wait "${to_wait[@]}"
@@ -64,7 +64,7 @@ enable_extensions() {
 
 # Function to get a map of extensions and their dependent shared extensions.
 get_extension_map() {
-  php -d'error_reporting=0' "${src:?}"/scripts/extensions/extension_map.php /tmp/map"$version".orig >/dev/null 2>&1
+  php -d'error_reporting=0' "${src:?}"/scripts/extensions/extension_map.php /tmp/map"$version".orig 
 }
 
 # Function to enable extension dependencies which are also extensions.
@@ -110,7 +110,7 @@ disable_extension() {
 disable_all_shared() {
   get_extension_map
   sudo sed -i.orig -E -e "/^(zend_)?extension\s*=/d" "${ini_file[@]}" "$pecl_file" 2>/dev/null || true
-  sudo find "${ini_dir:-$scan_dir}"/.. -name "*.ini" -not -path "*php.ini" -not -path "*phar.ini" -not -path "*pecl.ini" -not -path "*mods-available*" -delete >/dev/null 2>&1 || true
+  sudo find "${ini_dir:-$scan_dir}"/.. -name "*.ini" -not -path "*php.ini" -not -path "*phar.ini" -not -path "*pecl.ini" -not -path "*mods-available*" -delete  || true
   mkdir -p /tmp/extdisabled/"$version"
   sudo rm -f /tmp/php"$version"_extensions
   sudo find "$ext_dir" -name '*.so' -print0 | xargs -0 -n 1 basename -s .so | xargs -n 1 -I{} touch /tmp/extdisabled/"$version"/{}
@@ -124,7 +124,7 @@ configure_pecl() {
       sudo "$script" config-set php_ini "${pecl_file:-${ini_file[@]}}"
       sudo "$script" channel-update "$script".php.net
     done
-    echo '' | sudo tee /tmp/pecl_config >/dev/null 2>&1
+    echo '' | sudo tee /tmp/pecl_config 
   fi
 }
 
@@ -156,13 +156,13 @@ get_pecl_version() {
 # Function to install PECL extensions and accept default options
 pecl_install() {
   local extension=$1
-  add_pecl >/dev/null 2>&1
+  add_pecl 
   cpu_count="$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo '1')"
   prefix_opts="$(parse_args "$extension" CONFIGURE_PREFIX_OPTS) MAKEFLAGS='-j $cpu_count'"
   suffix_opts="$(parse_args "$extension" CONFIGURE_OPTS) $(parse_args "$extension" CONFIGURE_SUFFIX_OPTS)"
   IFS=' ' read -r -a libraries <<<"$(parse_args "$extension" LIBS) $(parse_args "$extension" "$(uname -s)"_LIBS)"
-  (( ${#libraries[@]} )) && add_libs "${libraries[@]}" >/dev/null 2>&1
-  yes '' 2>/dev/null | sudo "$prefix_opts" pecl install -f -D "$(parse_pecl_configure_options "$suffix_opts")" "$extension" >/dev/null 2>&1
+  (( ${#libraries[@]} )) && add_libs "${libraries[@]}" 
+  yes '' 2>/dev/null | sudo "$prefix_opts" pecl install -f -D "$(parse_pecl_configure_options "$suffix_opts")" "$extension" 
 }
 
 # Function to install a specific version of PECL extension.
@@ -178,7 +178,7 @@ add_pecl_extension() {
   if [ "${ext_version/-/}" = "$pecl_version" ]; then
     add_log "${tick:?}" "$extension" "Enabled"
   else
-    disable_extension_helper "$extension" >/dev/null 2>&1
+    disable_extension_helper "$extension" 
     pecl_install "$extension-$pecl_version"
     add_extension_log "$extension-$pecl_version" "Installed and enabled"
   fi
